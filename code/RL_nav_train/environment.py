@@ -3,7 +3,7 @@ from rl_utils import update_orientation
 
 
 class ActionSpace():
-    def __init__(self, shape=[2], low=-np.pi/12, high=np.pi/12):
+    def __init__(self, shape=[2], low=-np.pi/12, high=np.pi/12): #doesn't work, see actor_critic.take_action()
         self.shape = shape
         self.high = high
         self.low = low
@@ -19,6 +19,7 @@ class Environment2D():
         self.robot_orientation = np.random.uniform(-np.pi, np.pi,(1,))
         self.n_obstacles = 1
         x0, target, obstacles = self.initialize_random(self.n_obstacles)
+        self.init_dist_to_target = np.linalg.norm(x0-np.mean(target, axis=0))
         self.robot_position = x0
         self.target_zone = target
         self.forbidden_zone = obstacles
@@ -76,7 +77,6 @@ class Environment2D():
         return False
 
 
-    # réinitialisation de la position et de la direction du robot
     def reset(self):
         self.count = 0
         self.robot_orientation = np.random.uniform(-np.pi, np.pi, (1,))
@@ -112,7 +112,6 @@ class Environment2D():
         return 0
 
     def step(self, d_orientation):
-
         orientation_ = self.robot_orientation + d_orientation
         if self.robot_orientation[0] + d_orientation[0] > np.pi:
             orientation_[0] = self.robot_orientation[0] + d_orientation[0] - 2*np.pi
@@ -127,7 +126,7 @@ class Environment2D():
         robot = np.vstack((self.robot_position-self.robot_size/2, 
                            self.robot_position+self.robot_size/2))
 
-        if self.object_in_conflict(robot, self.forbidden_zone): 
+        if self.object_in_conflict(robot, self.forbidden_zone):
             return self.get_state(), -100, True  
         
         if self.check_target_reached():
@@ -137,7 +136,7 @@ class Environment2D():
             return self.get_state(), -self.dist_to_target()*3, True
         
         self.count += 1
-        return self.get_state(), -self.dist_to_target()/20, False
+        return self.get_state(), -self.dist_to_target()/self.init_dist_to_target, False
     
 
     def check_target_reached(self):
@@ -163,7 +162,7 @@ class Environment2D():
 
     def get_state(self):
         return np.concatenate(([self.angle_to_target()],
-                               [self.dist_to_target()/20],
+                               [self.dist_to_target()/self.init_dist_to_target],
                                [self.obstacle_in_field_of_vision()])
                                )
 

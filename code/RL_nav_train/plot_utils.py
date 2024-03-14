@@ -19,13 +19,13 @@ def plot_environment3d(count, robot_position, robot_orientation, target_zone, fo
 
 
 def plot_environment2d(count, robot_position, robot_orientation, target_zone, forbidden_zone, ax):
-
+    
     ax.scatter(robot_position[0], robot_position[1], c='b', s=2)
 
     if count == 1:
         plot_cube2d(target_zone[0], target_zone[1], ax, color='b')
         for obstacle in forbidden_zone:
-            plot_cube2d(obstacle, obstacle, ax, color='r')
+            plot_cube2d(obstacle[0], obstacle[1], ax, color='r')
 
     line1, line2 = plot_line_of_vision2d(robot_position, robot_orientation, ax)
     return line1, line2

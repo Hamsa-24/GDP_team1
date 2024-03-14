@@ -19,11 +19,13 @@ action_dim = 1
 env = Environment2D(state_dim, action_dim)
 agent = ActorCritic(env, actor_lr, critic_lr, gamma, device)
 
-PLOT2d = True
+PLOT2d = False
 PLOT3d = False
+PLOT_episodes = [1000, 10000, 15000]
 return_list = train_on_policy_agent(env, agent, num_episodes, 
                                     PLOT2d=PLOT2d,
-                                    PLOT3d=PLOT3d)
+                                    PLOT3d=PLOT3d,
+                                    PLOT_episodes=PLOT_episodes)
 
 
 episodes_list = list(range(len(return_list)))

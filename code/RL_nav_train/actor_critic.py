@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import numpy as np
 
 
 class PolicyNet(torch.nn.Module):
@@ -49,7 +50,7 @@ class ActorCritic:
         self.device = device
 
     def take_action(self, state):
-        state = torch.tensor([state], dtype=torch.float).to(self.device)
+        state = torch.tensor(np.array([state]), dtype=torch.float).to(self.device)
         action = self.actor(state)
         action_mean = action[:, :self.action_dim] 
         action_std = action[:, self.action_dim:]

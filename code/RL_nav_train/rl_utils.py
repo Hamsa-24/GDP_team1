@@ -68,12 +68,14 @@ def train_on_policy_agent0(env, agent, num_episodes, PLOT):
 
     return return_list
 
-def train_on_policy_agent(env, agent, num_episodes, PLOT2d=False, PLOT3d=False):
+def train_on_policy_agent(env, agent, num_episodes, PLOT2d=False, PLOT3d=False, PLOT_episodes=None):
     return_list = []
+    j = 0
     for i in range(10):
         with tqdm(total=int(num_episodes/10), desc='Iteration %d' % i) as pbar:
             for i_episode in range(int(num_episodes/10)):
-                fig, ax, tmp_objects = initialize_plot(PLOT2d, PLOT3d)
+                if j in PLOT_episodes:
+                    fig, ax, tmp_objects = initialize_plot(PLOT2d, PLOT3d)
 
                 episode_return = 0
                 transition_dict = {'states': [], 'actions': [], 'next_states': [], 'rewards': [], 'dones': []}
@@ -90,13 +92,16 @@ def train_on_policy_agent(env, agent, num_episodes, PLOT2d=False, PLOT3d=False):
                     state = next_state
                     episode_return += reward
 
-                    tmp_objects = update_plot(tmp_objects, fig, ax, env, PLOT2d, PLOT3d)
+                    if j in PLOT_episodes:
+                        tmp_objects = update_plot(tmp_objects, fig, ax, env, PLOT2d, PLOT3d)
 
                 return_list.append(episode_return)
                 agent.update(transition_dict)
                 if (i_episode+1) % 10 == 0:
                     pbar.set_postfix({'episode': '%d' % (num_episodes/10 * i + i_episode+1), 'return': '%.3f' % np.mean(return_list[-10:])})
                 pbar.update(1)
+                j += 1
+                plt.close()
 
     return return_list
 
@@ -221,9 +226,9 @@ def update_plot(objects, fig, ax, env, PLOT2d, PLOT3d):
         for object in objects:
             object.remove()
         line1, line2 = plot_environment2d(env.count, env.robot_position, env.robot_orientation, env.target_zone, env.forbidden_zone, ax)
-        text1=ax.scatter(-100, -100, label='Angle: '+ str(env.angle_to_target()), c='r')
-        text2=ax.scatter(-100, -100, label='Distance: '+ str(env.dist_to_target()), c='r')
-        text3=ax.scatter(-100, -100, label='Orientation: '+ str(env.robot_orientation), c='r')
+        text1=ax.scatter(-100, -100, label=f"Angle: {env.angle_to_target()*180/np.pi:.0f}°", c='r')
+        text2=ax.scatter(-100, -100, label=f"Distance: {env.dist_to_target():.1f}", c='r')
+        text3=ax.scatter(-100, -100, label=f"Orientation: {env.robot_orientation[0]*180/np.pi:.0f}°", c='r')
         plt.legend()
         plt.pause(0.00001)
         fig.canvas.draw_idle()
@@ -235,9 +240,9 @@ def update_plot(objects, fig, ax, env, PLOT2d, PLOT3d):
         for object in objects:
             object.remove()
         lines = plot_environment3d(env.count, env.robot_position, env.robot_orientation, env.target_zone, env.forbidden_zone, ax)
-        text1=ax.scatter(-100, -100, -100, label='Angle: '+ str(env.angle_to_target()), c='r')
-        text2=ax.scatter(-100, -100, -100, label='Distance: '+ str(env.dist_to_target()), c='r')
-        text3=ax.scatter(-100, -100, -100, label='Orientation: '+ str(env.robot_orientation), c='r')
+        text1=ax.scatter(-100, -100, label=f"Angle: {env.angle_to_target()*180/np.pi:.0f}°", c='r')
+        text2=ax.scatter(-100, -100, label=f"Distance: {env.dist_to_target():.1f}", c='r')
+        text3=ax.scatter(-100, -100, label=f"Orientation: {env.robot_orientation[0]*180/np.pi:.0f}°", c='r')
         plt.legend()
         plt.pause(0.00001)
         fig.canvas.draw_idle()
