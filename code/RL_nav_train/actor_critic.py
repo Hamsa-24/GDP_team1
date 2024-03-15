@@ -1,14 +1,17 @@
 import torch
 import torch.nn.functional as F
 import numpy as np
+import os
 
 
 class PolicyNet(torch.nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, name='model1'):
         super(PolicyNet, self).__init__()
         self.fc1 = torch.nn.Linear(state_dim, 1024)
         self.fc2 = torch.nn.Linear(1024, 512)
         self.fc3 = torch.nn.Linear(512, 2*action_dim)
+
+        self.name = name
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -16,6 +19,9 @@ class PolicyNet(torch.nn.Module):
         x = self.fc3(x)
         middle = int(len(x[0,:])/2)
         return torch.cat((x[:,:middle], torch.nn.functional.softplus(x[:,middle:])+1e-5), dim=1)
+    
+    def save(self):
+        torch.save(self.state_dict(), os.path.join('models', self.name))
     
 
 class ValueNet(torch.nn.Module):
@@ -34,13 +40,13 @@ class ValueNet(torch.nn.Module):
 
 class ActorCritic:
     def __init__(self, env, actor_lr, critic_lr,
-                 gamma, device):
+                 gamma, device, name):
 
         self.action_dim = env.action_space.shape[0]
         self.state_dim = env.state_dim
         self.high_action = env.action_space.high
 
-        self.actor = PolicyNet(self.state_dim, self.action_dim).to(device)
+        self.actor = PolicyNet(self.state_dim, self.action_dim, name).to(device)
         self.critic = ValueNet(self.state_dim).to(device)  
 
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=actor_lr)
@@ -61,15 +67,15 @@ class ActorCritic:
         return action_f
 
     def update(self, transition_dict):
-        states = torch.tensor(transition_dict['states'],
+        states = torch.tensor(np.array(transition_dict['states']),
                               dtype=torch.float).to(self.device)
-        actions = torch.tensor(transition_dict['actions']).view(-1, self.action_dim).to(
+        actions = torch.tensor(np.array(transition_dict['actions'])).view(-1, self.action_dim).to(
                                self.device)
-        rewards = torch.tensor(transition_dict['rewards'],
+        rewards = torch.tensor(np.array(transition_dict['rewards']),
                                dtype=torch.float).view(-1, 1).to(self.device)
-        next_states = torch.tensor(transition_dict['next_states'],
+        next_states = torch.tensor(np.array(transition_dict['next_states']),
                                    dtype=torch.float).to(self.device)
-        dones = torch.tensor(transition_dict['dones'],
+        dones = torch.tensor(np.array(transition_dict['dones']),
                              dtype=torch.float).view(-1, 1).to(self.device)
 
         # TD target

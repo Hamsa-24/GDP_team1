@@ -9,20 +9,20 @@ from actor_critic import ActorCritic
 
 actor_lr = 1e-5 #5
 critic_lr = 1e-6 #6
-num_episodes = 25000
+num_episodes = 100000
 gamma = 0.98
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device( "cpu")
 
-state_dim = 3
+state_dim = 4
 action_dim = 1
 
 env = Environment2D(state_dim, action_dim)
-agent = ActorCritic(env, actor_lr, critic_lr, gamma, device)
+agent = ActorCritic(env, actor_lr, critic_lr, gamma, device, name='model2d_2')
 
 PLOT2d = False
 PLOT3d = False
-PLOT_episodes = [1000, 10000, 15000]
-return_list = train_on_policy_agent(env, agent, num_episodes, 
+PLOT_episodes = []
+return_list = train_on_policy_agent(env, agent, num_episodes, save=True,
                                     PLOT2d=PLOT2d,
                                     PLOT3d=PLOT3d,
                                     PLOT_episodes=PLOT_episodes)

@@ -68,7 +68,7 @@ def train_on_policy_agent0(env, agent, num_episodes, PLOT):
 
     return return_list
 
-def train_on_policy_agent(env, agent, num_episodes, PLOT2d=False, PLOT3d=False, PLOT_episodes=None):
+def train_on_policy_agent(env, agent, num_episodes, save=False, PLOT2d=False, PLOT3d=False, PLOT_episodes=None):
     return_list = []
     j = 0
     for i in range(10):
@@ -77,6 +77,7 @@ def train_on_policy_agent(env, agent, num_episodes, PLOT2d=False, PLOT3d=False, 
                 if j in PLOT_episodes:
                     fig, ax, tmp_objects = initialize_plot(PLOT2d, PLOT3d)
 
+                best_return = 0
                 episode_return = 0
                 transition_dict = {'states': [], 'actions': [], 'next_states': [], 'rewards': [], 'dones': []}
                 state = env.reset()
@@ -97,6 +98,11 @@ def train_on_policy_agent(env, agent, num_episodes, PLOT2d=False, PLOT3d=False, 
 
                 return_list.append(episode_return)
                 agent.update(transition_dict)
+
+                if episode_return > best_return and save:
+                    best_return = episode_return
+                    agent.actor.save()
+
                 if (i_episode+1) % 10 == 0:
                     pbar.set_postfix({'episode': '%d' % (num_episodes/10 * i + i_episode+1), 'return': '%.3f' % np.mean(return_list[-10:])})
                 pbar.update(1)
@@ -200,8 +206,8 @@ def initialize_plot(PLOT2d, PLOT3d):
     if PLOT2d:
         fig = plt.figure(figsize=(10,6))
         ax = fig.add_subplot(111)
-        ax.set_xlim(-8, 12)
-        ax.set_ylim(-8, 12)
+        ax.set_xlim(-1, 12)
+        ax.set_ylim(-1, 12)
         text1, text2, text3, line1, line2 = ax.text(-100,-100,''), ax.text(-100,-100,''), ax.text(-100,-100,''), \
                                             ax.text(-100,-100,''), ax.text(-100,-100,'')
         tmp_objects = [text1, text2, text3, line1, line2]
@@ -209,11 +215,11 @@ def initialize_plot(PLOT2d, PLOT3d):
     elif PLOT3d:
         fig = plt.figure(figsize=(10,6))
         ax = fig.add_subplot(111, projection='3d')
-        ax.set_xlim(-8, 12)
-        ax.set_ylim(-8, 12)
-        ax.set_zlim(-8, 12)
-        text1, text2, text3, lines = ax.text(-100,-100,''), ax.text(-100,-100,''), ax.text(-100,-100,''), \
-                                    [ax.text(-100,-100,'') for i in range(4)]
+        ax.set_xlim(-1, 12)
+        ax.set_ylim(-1, 12)
+        ax.set_zlim(-1, 12)
+        text1, text2, text3, lines = ax.text(-100,-100,-100,''), ax.text(-100,-100,-100,''), ax.text(-100,-100,-100,''), \
+                                    [ax.text(-100,-100,-100,'') for i in range(4)]
         tmp_objects = [text1, text2, text3]
         for line in lines:
              tmp_objects.append(line)
@@ -240,9 +246,9 @@ def update_plot(objects, fig, ax, env, PLOT2d, PLOT3d):
         for object in objects:
             object.remove()
         lines = plot_environment3d(env.count, env.robot_position, env.robot_orientation, env.target_zone, env.forbidden_zone, ax)
-        text1=ax.scatter(-100, -100, label=f"Angle: {env.angle_to_target()*180/np.pi:.0f}°", c='r')
-        text2=ax.scatter(-100, -100, label=f"Distance: {env.dist_to_target():.1f}", c='r')
-        text3=ax.scatter(-100, -100, label=f"Orientation: {env.robot_orientation[0]*180/np.pi:.0f}°", c='r')
+        text1=ax.scatter(-100, -100, -100, label=f"Angle: {env.angle_to_target()*180/np.pi:.0f}°", c='r')
+        text2=ax.scatter(-100, -100, -100, label=f"Distance: {env.dist_to_target():.1f}", c='r')
+        text3=ax.scatter(-100, -100, -100,label=f"Orientation: {env.robot_orientation[0]*180/np.pi:.0f}°", c='r')
         plt.legend()
         plt.pause(0.00001)
         fig.canvas.draw_idle()

@@ -8,7 +8,7 @@ import os
 
 def plot_environment3d(count, robot_position, robot_orientation, target_zone, forbidden_zone, ax):
 
-    ax.scatter(robot_position[0], robot_position[1], robot_position[2], c='b', label='Robot', s=0.5)
+    ax.scatter(robot_position[0], robot_position[1], robot_position[2], c='b', s=0.5)
 
     if count == 1:
         plot_cube3d(target_zone[0], target_zone[1], ax, color='b')
@@ -106,10 +106,10 @@ def plot_line_of_vision3d(position, orientation, ax, length_edge=6, angle_vision
     for edge in edges:
         # Afficher le segment de champ de vision
 
-        line, =ax.plot([position[0], edge[0]], 
-                             [position[1], edge[1]], 
-                             [position[2], edge[2]], 
-                             color='g', linewidth=1.5)
+        line, = ax.plot([position[0], edge[0]], 
+                        [position[1], edge[1]], 
+                        [position[2], edge[2]], 
+                         color='g', linewidth=1.5)
         lines.append(line)
         
     line1, = ax.plot([edges[0][0], edges[2][0]], 

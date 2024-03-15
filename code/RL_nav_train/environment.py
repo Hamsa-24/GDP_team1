@@ -17,7 +17,7 @@ class Environment2D():
         self.count = 0
         self.death_count = max(1,int(np.random.normal(100, 10)))
         self.robot_orientation = np.random.uniform(-np.pi, np.pi,(1,))
-        self.n_obstacles = 1
+        self.n_obstacles = np.random.randint(5,25)
         x0, target, obstacles = self.initialize_random(self.n_obstacles)
         self.init_dist_to_target = np.linalg.norm(x0-np.mean(target, axis=0))
         self.robot_position = x0
@@ -25,18 +25,19 @@ class Environment2D():
         self.forbidden_zone = obstacles
 
     def initialize_random(self, n_obstacles):
+        max_obs_size = 2*1/np.sqrt(n_obstacles)
         x_f = np.random.uniform(0,9,(2,))
         target = np.vstack((x_f, x_f+1))
         
         objects = [target]
         obstacles = []
         for _ in range(n_obstacles):
-            obstacle_sizes = np.random.uniform(0.5, 2, (2,))
+            obstacle_sizes = np.random.uniform(0.2*max_obs_size, max_obs_size, (2,))
             obstacle_pos = np.random.uniform(0,8, (2,))
             obstacle = np.vstack((obstacle_pos, obstacle_pos+obstacle_sizes))
             
             while self.object_in_conflict(obstacle, objects):
-                obstacle_sizes = np.random.uniform(0.5, 2, (2,))
+                obstacle_sizes = np.random.uniform(0.2*max_obs_size, max_obs_size, (2,))
                 obstacle_pos = np.random.uniform(0, 8, (2,))
                 obstacle = np.vstack((obstacle_pos, obstacle_pos+obstacle_sizes))
             obstacles.append(obstacle)
@@ -81,6 +82,7 @@ class Environment2D():
         self.count = 0
         self.robot_orientation = np.random.uniform(-np.pi, np.pi, (1,))
         self.death_count = max(1,int(np.random.normal(100, 10)))
+        self.n_obstacles = np.random.randint(5,25)
         x0, target, obstacles = self.initialize_random(self.n_obstacles)
         self.robot_position = x0
         self.target_zone = target
@@ -90,26 +92,29 @@ class Environment2D():
     def dist_to_target(self):
         return np.linalg.norm(self.robot_position - self.target_zone.mean(axis=0))
     
-    def obstacle_in_field_of_vision(self, angle_vision=np.pi/12):
+    def obstacle_in_field_of_vision(self, angle_vision=np.pi/12, scope=5):
         # Convertir l'orientation en vecteur directionnel
         position = self.robot_position
         orientation = self.robot_orientation[0]
         direction = np.array([np.cos(orientation),
                               np.sin(orientation)])
         
+        dist_closest_obstacle = 100
         for obstacle in self.forbidden_zone:
             # Calculer le vecteur entre la position de l'agent et le centre de l'obstacle
             vector_agent_obstacle = obstacle.mean(axis=0) - position
 
             # Calculer la distance entre l'agent et le centre de l'obstacle
             distance_agent_obstacle = np.linalg.norm(vector_agent_obstacle)
+            if distance_agent_obstacle < dist_closest_obstacle:
+                dist_closest_obstacle = distance_agent_obstacle
 
             # Vérifier si l'obstacle est dans le champ de vision de l'agent
             if distance_agent_obstacle > 0:
                 angle_obstacle = np.arccos(np.dot(direction, vector_agent_obstacle) / distance_agent_obstacle)
-                if angle_obstacle < angle_vision:
-                    return 1
-        return 0
+                if angle_obstacle < angle_vision and distance_agent_obstacle < scope:
+                    return distance_agent_obstacle/scope, 1
+        return dist_closest_obstacle/scope, 0
 
     def step(self, d_orientation):
         orientation_ = self.robot_orientation + d_orientation
@@ -162,8 +167,8 @@ class Environment2D():
 
     def get_state(self):
         return np.concatenate(([self.angle_to_target()],
-                               [self.dist_to_target()/self.init_dist_to_target],
-                               [self.obstacle_in_field_of_vision()])
+                               [self.dist_to_target()/10],
+                                self.obstacle_in_field_of_vision())
                                )
 
 
@@ -193,7 +198,7 @@ class Environment3D():
     def dist_to_target(self):
         return np.linalg.norm(self.robot_position - self.target_zone.mean(axis=0))
     
-    def obstacle_in_field_of_vision(self, angle_vision=np.pi/12):
+    def obstacle_in_field_of_vision(self, angle_vision=np.pi/12, scope=7):
         # Convertir l'orientation en vecteur directionnel
         position = self.robot_position
         orientation = self.robot_orientation
@@ -202,23 +207,26 @@ class Environment3D():
                               np.sin(orientation[0]) * np.cos(orientation[1]),
                               np.sin(orientation[1])])
 
+        dist_closest_obstacle = 100
         # Calculer le vecteur entre la position de l'agent et le centre de l'obstacle
         vector_agent_obstacle = (position_obstacle[0] + position_obstacle[1]) / 2 - position
 
         # Calculer la distance entre l'agent et le centre de l'obstacle
         distance_agent_obstacle = np.linalg.norm(vector_agent_obstacle)
+        if distance_agent_obstacle < dist_closest_obstacle:
+                dist_closest_obstacle = distance_agent_obstacle
 
         # Vérifier si l'obstacle est dans le champ de vision de l'agent
         if distance_agent_obstacle > 0:
             angle_obstacle = np.arccos(np.dot(direction, vector_agent_obstacle) / distance_agent_obstacle)
-            if angle_obstacle < angle_vision:
-                return 1
-        return 0
+            if angle_obstacle < angle_vision and distance_agent_obstacle < scope:
+                return distance_agent_obstacle/scope, 1
+        return dist_closest_obstacle/scope, 0
 
     def step(self, d_orientation):
 
         self.robot_orientation = update_orientation(self.robot_orientation, d_orientation)
-        self.robot_position += 1/4 * np.array([np.cos(self.robot_orientation[0]) * np.cos(self.robot_orientation[1]), 
+        self.robot_position += 1/3 * np.array([np.cos(self.robot_orientation[0]) * np.cos(self.robot_orientation[1]), 
                                                np.sin(self.robot_orientation[0]) * np.cos(self.robot_orientation[1]), 
                                                np.sin(self.robot_orientation[1])])
 
@@ -287,4 +295,4 @@ class Environment3D():
         # Retourne l'état actuel de l'environnement
         return np.concatenate(([self.angle_to_target()],
                                [self.dist_to_target()/20],
-                               [self.obstacle_in_field_of_vision()]))
+                               self.obstacle_in_field_of_vision()))

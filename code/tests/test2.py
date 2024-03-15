@@ -13,3 +13,11 @@ x0 = np.array([0, 0])
 target = np.array([[-0.5, 5],[0.5, 6]])
 init_dist_to_target = np.linalg.norm(x0-np.mean(target, axis=0))
 print(init_dist_to_target)
+
+def a(x):
+
+    return x-1, x
+
+b, c = a(2)
+
+print(np.concatenate(([b], a(2))))
