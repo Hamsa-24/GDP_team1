@@ -49,9 +49,9 @@ class ActorCritic:
     def __init__(self, env, actor_lr, critic_lr,
                  gamma, device, name, fc1=2048, fc2=2048):
 
-        self.action_dim = env.action_space.shape[0]
+        self.action_dim = env.action_dim
         self.state_dim = env.state_dim
-        self.high_action = env.action_space.high
+        self.high_action = np.pi/12
 
         self.actor = PolicyNet(self.state_dim, self.action_dim, self.high_action, 
                                device,fc1, fc2, name).to(device)

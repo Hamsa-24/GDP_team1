@@ -195,40 +195,52 @@ def initialize_plot(PLOT2d, PLOT3d):
         ax.set_zlim(-1, 12)
         text1, text2, text3, lines = ax.text(-100,-100,-100,''), ax.text(-100,-100,-100,''), ax.text(-100,-100,-100,''), \
                                     [ax.text(-100,-100,-100,'') for i in range(4)]
-        tmp_objects = [text1, text2, text3]
+        text_instr = [text1, text2, text3]
+        tmp_objects = []
         for line in lines:
              tmp_objects.append(line)
-        return fig, ax, tmp_objects
+        return fig, ax, tmp_objects, text_instr
     return None, None, None
     
 
-def update_plot(objects, fig, ax, env, PLOT2d, PLOT3d):
-    if PLOT2d:
-        for object in objects:
+def update_plot(env):
+        
+        for object in env.tmp_objects:
             object.remove()
-        line1, line2 = plot_environment2d(env.count, env.agent_position, env.agent_orientation, env.target_zone, env.forbidden_zone, ax)
-        text1=ax.scatter(-100, -100, label=f"Angle: {env.angle_to_target()*180/np.pi:.0f}°", c='r')
-        text2=ax.scatter(-100, -100, label=f"Distance: {env.dist_to_target():.1f}", c='r')
-        text3=ax.scatter(-100, -100, label=f"Orientation: {env.agent_orientation*180/np.pi:.0f}°", c='r')
+        for text in env.text_instr:
+            text.remove()
+        lines = plot_environment3d(env.count, env.agent_position, env.agent_orientation, env.target_zone, env.forbidden_zone, env.ax)
+
+        text_instr = []
+        if env.show_instr_d_theta:
+            if env.instr_d_theta > 0:
+                text1=env.ax.scatter(-100, -100, -100, label=f"Turn left by {env.instr_d_theta*180/np.pi:.0f}°", c='r')
+            else:
+                text1=env.ax.scatter(-100, -100, -100, label=f"Turn right by {-env.instr_d_theta*180/np.pi:.0f}°", c='r')
+            text_instr.append(text1)
+
+        if env.show_instr_vz:
+            if env.instr_vz > 0:
+                text2=env.ax.scatter(-100, -100, -100, label=f"Go up by {env.instr_vz:.0f}", c='r')
+            else: 
+                text2=env.ax.scatter(-100, -100, -100, label=f"Go down and land on roof", c='r')
+            text_instr.append(text2)
+
+        if env.show_angle_to_xf:
+            text3=env.ax.scatter(-100, -100, -100, label=f"Angle to target: {env.angle_to_target()*180/np.pi:.0f}°", c='r')
+            text_instr.append(text3)
+        if env.show_dist_to_xf:
+            text4=env.ax.scatter(-100, -100, -100, label=f"Distance to target: {env.dist_to_target():.1f}", c='r')
+            text_instr.append(text4)
+
+        text5=env.ax.scatter(-100, -100, -100,label=f"Orientation: {env.agent_orientation*180/np.pi:.0f}°", c='r')
+        text6=env.ax.scatter(-100, -100, -100,label=f"Altitude: {env.agent_position[-1]:.2f}°", c='r')
+        text_instr.append(text5)
+        text_instr.append(text6)
         plt.legend()
         plt.pause(0.00001)
-        fig.canvas.draw_idle()
-        fig.canvas.flush_events()
-        tmp_objects = [text1, text2, text3, line1, line2]
-        return tmp_objects
-    
-    if PLOT3d:
-        for object in objects:
-            object.remove()
-        lines = plot_environment3d(env.count, env.agent_position, env.agent_orientation, env.target_zone, env.forbidden_zone, ax)
-        text1=ax.scatter(-100, -100, -100, label=f"Angle: {env.angle_to_target()*180/np.pi:.0f}°", c='r')
-        text2=ax.scatter(-100, -100, -100, label=f"Distance: {env.dist_to_target():.1f}", c='r')
-        text3=ax.scatter(-100, -100, -100,label=f"Orientation: {env.agent_orientation*180/np.pi:.0f}°", c='r')
-        plt.legend()
-        plt.pause(0.00001)
-        fig.canvas.draw_idle()
-        fig.canvas.flush_events()
-        tmp_objects = [text1, text2, text3]
-        for line in lines:
-            tmp_objects.append(line)
-        return tmp_objects
+        env.fig.canvas.draw_idle()
+        env.fig.canvas.flush_events()
+
+        tmp_objects = lines
+        return tmp_objects, text_instr
