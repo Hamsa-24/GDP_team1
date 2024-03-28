@@ -24,9 +24,19 @@ class Environment3D:
     def set_forbidden_positions(self, positions):
         for pos in positions:
             self.grid[pos[0], pos[1], pos[2]] = 1  # Set forbidden positions to 1
+    
+    def set_landing_zone(self,position1,position2):
+        for x in range(position1[0],position2[0]):
+            for y in range(position1[1],position2[1]):
+                for z in range (position1[2],position1[2] + 1):
+                    self.grid[x, y, z] = 2
 
     def is_position_allowed(self, position):
         return self.grid[round(position[0]), round(position[1]), round(position[2])] == 0  # Check if the position is allowed (value 0)
+    
+    def is_landed(self,position):
+        return self.grid[round(position[0]), round(position[1]), round(position[2])] == 2
+
 
     def create_building(self, position, yaw, dimensions):
 
@@ -53,6 +63,7 @@ class Environment3D:
                 for z in range (start[2],end[2]):
                     forbidden_positions.append([x,y,z])
         self.set_forbidden_positions(forbidden_positions)
+        self.set_landing_zone([start[0],start[1],end[2]],end)
         # slices = tuple(slice(max(0, s), min(self.size[i], e)) for i, (s, e) in enumerate(zip(start, end)))
         # self.grid[slices[0], slices[1], slices[2]] = 1  # Set cells within the building's dimensions to forbidden
 

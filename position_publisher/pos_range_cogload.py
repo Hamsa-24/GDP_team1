@@ -1,46 +1,5 @@
 #!/usr/bin/env python3
 
-# import rclpy
-# from rclpy.node import Node
-# from geometry_msgs.msg import Pose
-
-# class PositionPublisher(Node):
-#     def __init__(self):
-#         super().__init__('position_publisher')
-#         self.subscription = self.create_subscription(
-#             Pose,
-#             '/simple_robot/tf',  # Change this topic to the actual topic name
-#             self.position_callback,
-#             10)
-#         self.subscription  # Prevent unused variable warning
-
-#     def position_callback(self, msg):
-#         # Process the received position message
-#         position = msg.position
-#         print("Robot Position:")
-#         print("x:", position.x)
-#         print("y:", position.y)
-#         print("z:", position.z)
-
-# def main(args=None):
-#     rclpy.init(args=args)
-#     position_subscriber = PositionPublisher()
-
-#     def timer_callback():
-#         # You can create a dummy message here or handle the absence of message accordingly
-#         msg = None  # Placeholder for the received message
-#         position_subscriber.position_callback(msg)
-
-#     timer_period = 1.0  # seconds
-#     timer = position_subscriber.create_timer(timer_period, timer_callback)
-
-#     rclpy.spin(position_subscriber)
-#     position_subscriber.destroy_node()
-#     rclpy.shutdown()
-
-# if __name__ == '__main__':
-#     main()
-
 import rclpy
 from rclpy.node import Node
 # from geometry_msgs.msg import TransformStamped
@@ -95,7 +54,7 @@ class TFListener(Node):
             Odometry,
             '/simple_drone/odom',
             self.tf_callback,
-            10)  # Set QoS depth to 10000
+            10)
         
         # Abonnement aux données du sonar
         self.sonar_subscription = self.create_subscription(
@@ -103,15 +62,11 @@ class TFListener(Node):
             '/simple_drone/sonar/out',
             self.sonar_callback,
             10) 
-        
-        self.timer = self.create_timer(1, self.save_to_csv)  # Timer to save to CSV every 1 second
         self.csv_file = 'simple_drone_positions.csv'
         self.latest_position = None
         self.latest_rotation = None
         self.latest_range = None
-        self.latest_arduino = None
-        # self.positions = []
-
+        self.arduino_data = None
 
     def tf_callback(self, msg : Odometry):
         # # Extract position information from the TransformStamped message
@@ -131,7 +86,7 @@ class TFListener(Node):
         # self.positions.append([position_x, position_y, position_z])
         self.latest_position = msg.pose.pose.position
         self.latest_rotation = msg.pose.pose.orientation.z
-    
+
     def sonar_callback(self, msg : Range):
         range = msg.range
 
@@ -142,50 +97,37 @@ class TFListener(Node):
         # # Add positions to list
         # self.positions.append([position_x, position_y, position_z])
         self.latest_range = range
-        
+        self.save_to_csv()
+    
+    def bpm_callback(self):
+        with open("/home/blechardoy/Cranfield/Python/Deep_learning/RL_Laboratory/serial_data.csv", mode='r') as file:
+            last_line = None
+            for line in file:
+                last_line = line
+
+        if last_line is not None:
+            values = last_line.strip().split(',')
+            self.arduino_data = values[-1]
 
     def save_to_csv(self):
-        # # Save positions to CSV file
-        # with open(self.csv_file, mode='a') as file:
-        #     writer = csv.writer(file)
-        #     writer.writerows(self.positions)
-        # self.positions = []  # Clear positions list for next cycle
-        if self.latest_position is not None:
-            if env.is_position_allowed([self.latest_position.x, self.latest_position.y, self.latest_position.z]) == True:
-            
-                # Save the latest position to CSV file
-                with open(self.csv_file, mode='a') as file:
+        self.bpm_callback()
+        if self.latest_position is not None and self.arduino_data is not None:
+            with open(self.csv_file, mode='a') as file:
+                if env.is_position_allowed([self.latest_position.x, self.latest_position.y, self.latest_position.z]):
                     writer = csv.writer(file)
-                    writer.writerow([self.latest_position.x, self.latest_position.y, self.latest_position.z,self.latest_rotation,self.latest_range,"Flying"])
-                # Clear the latest position
-                self.latest_position = None
-                self.latest_rotation = None
-            elif env.is_landed([self.latest_position.x, self.latest_position.y, self.latest_position.z]) == True:
-
-                with open(self.csv_file, mode='a') as file:
+                    writer.writerow([self.latest_position.x, self.latest_position.y, self.latest_position.z, self.latest_rotation,self.latest_range, self.arduino_data, "Flying"])
+                elif env.is_landed([self.latest_position.x, self.latest_position.y, self.latest_position.z]):
                     writer = csv.writer(file)
-                    writer.writerow([self.latest_position.x, self.latest_position.y, self.latest_position.z,self.latest_rotation, self.latest_range,"You landed successfully"])
+                    writer.writerow([self.latest_position.x, self.latest_position.y, self.latest_position.z, self.latest_rotation, self.latest_range, self.arduino_data, "You landed successfully"])
+                    reset_world()
+                else:
+                    writer = csv.writer(file)
+                    writer.writerow([self.latest_position.x, self.latest_position.y, self.latest_position.z, self.latest_rotation, self.latest_range, self.arduino_data, "You Crashed"])
                     reset_world()
 
-
-            else : 
-                                # Save the latest position to CSV file
-                with open(self.csv_file, mode='a') as file:
-                    writer = csv.writer(file)
-                    writer.writerow([self.latest_position.x, self.latest_position.y, self.latest_position.z,self.latest_rotation, self.latest_range,"You Crashed"])
-                    
-                    reset_world()
-
-    # def append_from_csv(self, input_csv_file):
-    #     # Read values from another CSV file and append them to simple_drone_positions.csv
-    #     with open(input_csv_file, mode='r') as file:
-    #         reader = csv.reader(file)
-    #         next(reader)  # Skip header if present
-    #         for row in reader:
-    #             # Write each row to simple_drone_positions.csv
-    #             with open(self.csv_file, mode='a') as output_file:
-    #                 writer = csv.writer(output_file)
-    #                 writer.writerow(row)
+    def update_arduino_data(self, arduino_data):
+        self.arduino_data = arduino_data
+        self.save_to_csv()  # Call save_to_csv after receiving arduino data
 
 def main(args=None):
     rclpy.init(args=args)
