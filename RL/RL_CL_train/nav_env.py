@@ -3,24 +3,24 @@ import numpy as np
 class NavEnvironment():
     def __init__(self, state_dim, action_dim, env):
         #np.random.seed(12)
-        self.agent_size = env.agent_size
+        self.agent_size = np.copy(env.agent_size)
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.count = env.count
-        self.death_count = env.death_count
-        self.agent_orientation = env.agent_orientation
-        self.agent_position = env.agent_position
-        self.target_zone = env.target_zone
-        self.forbidden_zone = env.forbidden_zone
+        self.count = np.copy(env.count)
+        self.death_count = np.copy(env.death_count)
+        self.agent_orientation = np.copy(env.agent_orientation)
+        self.agent_position = np.copy(env.agent_position)
+        self.target_zone = np.copy(env.target_zone)
+        self.forbidden_zone = np.copy(env.forbidden_zone)
         self.init_dist_to_target = self.dist_to_target()
 
     def reset(self, env):
-        self.count = env.count
-        self.agent_orientation = env.agent_orientation
-        self.death_count = env.death_count
-        self.agent_position = env.agent_position
-        self.target_zone = env.target_zone
-        self.forbidden_zone = env.forbidden_zone
+        self.count = np.copy(env.count)
+        self.agent_orientation = np.copy(env.agent_orientation)
+        self.death_count = np.copy(env.death_count)
+        self.agent_position = np.copy(env.agent_position)
+        self.target_zone = np.copy(env.target_zone)
+        self.forbidden_zone = np.copy(env.forbidden_zone)
         self.init_dist_to_target = self.dist_to_target()
         return self.get_state()
     
@@ -66,34 +66,55 @@ class NavEnvironment():
 
     
     def dist_to_target(self):
-        return np.linalg.norm(self.agent_position - self.target_zone.mean(axis=0))
+        return np.linalg.norm(self.agent_position[:-1] - self.target_zone[:,:-1].mean(axis=0))
     
     def deniv_to_target(self):
-        return self.target_zone.mean(axis=0)[-1] - self.agent_position[-1]
+        return self.target_zone[-1,-1] - self.agent_position[-1]
     
-    def obstacle_in_field_of_vision(self, angle_vision=np.pi/12, scope=3):
-
+    def obstacle_in_field_of_vision1(self, angle_vision=np.pi/12, scope=3):
         position = self.agent_position
         orientation = self.agent_orientation
         direction = np.array([np.cos(orientation), np.sin(orientation), 0])
 
         dist_closest_obstacle = 100
         for obstacle in self.forbidden_zone:
-            vector_agent_obstacle = obstacle.mean(axis=0) - position
+            horizontal_vector = (obstacle.mean(axis=0) - position)[:-1]
+            horizontal_dist = np.linalg.norm(horizontal_vector)
 
-            # Calculer la distance entre l'agent et le centre de l'obstacle
-            distance_agent_obstacle = np.linalg.norm(vector_agent_obstacle)
-            if distance_agent_obstacle < dist_closest_obstacle:
-                dist_closest_obstacle = distance_agent_obstacle
+            if horizontal_dist < dist_closest_obstacle and position[-1] < obstacle[-1,-1]:
+                dist_closest_obstacle = horizontal_dist
 
-            # Vérifier si l'obstacle est dans le champ de vision de l'agent
-            if distance_agent_obstacle > 0:
-                angle_obstacle = np.arccos(np.dot(direction, vector_agent_obstacle) / distance_agent_obstacle)
+            if horizontal_dist > 0:
+                angle_obstacle = np.arccos(np.dot(direction[:-1], horizontal_vector) / horizontal_dist)
                 if (angle_obstacle < angle_vision) and \
-                   (distance_agent_obstacle < scope) and \
+                   (horizontal_dist < scope) and \
                    (position[-1] < obstacle[-1,-1]):
-                    return distance_agent_obstacle/scope, 1
+                    return horizontal_dist/scope, 1
         return dist_closest_obstacle/scope, 0
+    
+
+    def obstacle_in_field_of_vision(self, angle_vision=np.pi/12, scope=3):
+        position = self.agent_position[:-1]
+        alt = self.agent_position[-1]
+        orientation = self.agent_orientation
+        direction = np.array([np.cos(orientation),
+                              np.sin(orientation)])
+        
+        collision_risk = 0
+        obstacle_ahead = 0
+        collision_risks = [collision_risk]
+
+        for obstacle in self.forbidden_zone:
+            vector_agent_obstacle = (obstacle[:,:-1].mean(axis=0) - position)
+            distance_agent_obstacle = np.linalg.norm(vector_agent_obstacle)
+            if distance_agent_obstacle > 0 and alt < obstacle[-1,-1]:
+                angle_obstacle = np.arccos(np.dot(direction, vector_agent_obstacle) / distance_agent_obstacle)
+                if angle_obstacle < angle_vision and distance_agent_obstacle < scope:
+                    collision_risk = (scope-distance_agent_obstacle)/scope
+                    collision_risks.append(collision_risk)
+                    obstacle_ahead = 1
+    
+        return np.max(collision_risks), obstacle_ahead
 
 
     def check_target_reached(self):
@@ -113,23 +134,10 @@ class NavEnvironment():
         norm_v1, norm_v2 = np.linalg.norm(v1), np.linalg.norm(v2)
         theta = np.arccos(dot_product / (norm_v1 * norm_v2))
         return theta
-    
-    def calculate_path(self, nav_agent, n_actions_per_step):
-        path = []
-        reward_nav = 0
-        done = False
-        state = self.get_state()
-        for _ in range(n_actions_per_step):
-            if not done:
-                action = nav_agent.take_action(state)
-                next_state, reward, done = self.step(action)
-                path.append(action[0])
-                reward_nav += reward
-                state = next_state
-        return path, reward_nav
+
 
     def get_state(self):
-        return np.concatenate(([self.angle_to_target()],
+        return np.concatenate(([self.angle_to_target()/np.pi],
                                [self.dist_to_target()/self.init_dist_to_target],
                                 self.obstacle_in_field_of_vision()))
     
@@ -147,7 +155,6 @@ class NavEnvironment():
                                np.sin(self.agent_orientation)])
 
         self.agent_position += np.concatenate((d_xy, [0]))
-
         agent = np.vstack((self.agent_position - self.agent_size/2, 
                            self.agent_position + self.agent_size/2))
 

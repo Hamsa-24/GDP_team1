@@ -8,8 +8,8 @@ from DDPG import DDPG
 
 
 actor_lr = 1e-5 #5
-critic_lr = 1e-10#6
-num_episodes = 100000
+critic_lr = 1e-6#6
+num_episodes = 2000000
 gamma = 0.98
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device( "cpu")
 
@@ -18,7 +18,7 @@ action_dim = 1
 
 env = Environment2D(state_dim, action_dim)
 agent = ActorCritic(env, actor_lr, critic_lr, gamma, device, 
-             name='AC2d_4', fc1=1024, fc2=512)
+             name='AC2d_5b', fc1=1024, fc2=512)
 
 PLOT2d = True
 PLOT3d = False

@@ -68,6 +68,7 @@ class ActorCritic:
         action_std = action[:, self.action_dim:]
         dist = torch.distributions.Normal(action_mean, action_std)
         action_f = dist.sample()
+        #action_f = torch.tanh(action_f)*torch.tensor([self.high_action]).to(self.device)
         action_f = action_f.cpu().detach().numpy()[0]
         return action_f
 

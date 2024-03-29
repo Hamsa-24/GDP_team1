@@ -83,7 +83,21 @@ def set_projection(w, h):
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(45, w / h, 0.1, 50.0)
-    glTranslatef(-7, -3, -20)  # Déplace la caméra vers l'arrière pour obtenir une vue 3/4
+    glTranslatef(-7, -3, -20) 
     glRotatef(45, 1, -1, 0)  # Rotation pour obtenir une vue 3/4
     glRotatef(-90, 1, 0, 0)
+    glMatrixMode(GL_MODELVIEW)
+
+
+def set_projection1(pos, theta):
+    glLoadIdentity()
+    camera_pos = pos
+
+    glTranslatef(-camera_pos[0], -camera_pos[1], -camera_pos[2])
+
+    # Appliquer une rotation pour orienter la caméra selon l'orientation de l'agent
+    angle_degrees = np.degrees(theta)
+    glRotatef(90, 0, 1, 0)  # Rotation autour de l'axe z (vertical)
+
+    # Assurez-vous que le mode de matrice soit GL_MODELVIEW
     glMatrixMode(GL_MODELVIEW)

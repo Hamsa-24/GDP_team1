@@ -1,5 +1,4 @@
 import numpy as np
-from rl_utils import update_orientation
 import random
 
 
@@ -18,7 +17,7 @@ class Environment2D():
         self.count = 0
         self.death_count = max(1,int(np.random.normal(100, 10)))
         self.agent_orientation = np.random.uniform(-np.pi, np.pi)
-        self.n_obstacles = np.random.randint(5,25)
+        self.n_obstacles = np.random.randint(0,25)
         x0, target, obstacles = self.initialize_random(self.n_obstacles)
         self.agent_position = x0
         self.target_zone = target
@@ -29,7 +28,7 @@ class Environment2D():
         self.count = 0
         self.agent_orientation = np.random.uniform(-np.pi, np.pi)
         self.death_count = max(1,int(np.random.normal(100, 10)))
-        self.n_obstacles = np.random.randint(5,25)
+        self.n_obstacles = np.random.randint(0,25)
         x0, target, obstacles = self.initialize_random(self.n_obstacles)
         self.agent_position = x0
         self.target_zone = target
@@ -100,29 +99,29 @@ class Environment2D():
     def dist_to_target(self):
         return np.linalg.norm(self.agent_position - self.target_zone.mean(axis=0))
     
-    def obstacle_in_field_of_vision(self, angle_vision=np.pi/12, scope=2):
+    def obstacle_in_field_of_vision(self, angle_vision=np.pi/12, scope=3):
         # Convertir l'orientation en vecteur directionnel
         position = self.agent_position
         orientation = self.agent_orientation
         direction = np.array([np.cos(orientation),
                               np.sin(orientation)])
         
-        dist_closest_obstacle = 100
+        collision_risk = 0
+        obstacle_ahead = 0
+        collision_risks = [collision_risk]
+
         for obstacle in self.forbidden_zone:
-            # Calculer le vecteur entre la position de l'agent et le centre de l'obstacle
             vector_agent_obstacle = obstacle.mean(axis=0) - position
-
-            # Calculer la distance entre l'agent et le centre de l'obstacle
             distance_agent_obstacle = np.linalg.norm(vector_agent_obstacle)
-            if distance_agent_obstacle < dist_closest_obstacle:
-                dist_closest_obstacle = distance_agent_obstacle
-
-            # Vérifier si l'obstacle est dans le champ de vision de l'agent
             if distance_agent_obstacle > 0:
                 angle_obstacle = np.arccos(np.dot(direction, vector_agent_obstacle) / distance_agent_obstacle)
                 if angle_obstacle < angle_vision and distance_agent_obstacle < scope:
-                    return distance_agent_obstacle/scope, 1
-        return dist_closest_obstacle/scope, 0
+                    collision_risk = (scope-distance_agent_obstacle)/scope
+                    collision_risks.append(collision_risk)
+                    obstacle_ahead = 1
+    
+        return np.max(collision_risks), obstacle_ahead
+
 
     def check_target_reached(self):
         # Calcule les coordonnées du coin inférieur et du coin supérieur du cube du drone
@@ -136,7 +135,7 @@ class Environment2D():
     def is_crashed(self):
         return self.count == self.death_count
     
-    def angle_to_target(self):
+    def angle_to_target1(self):
         v1 = np.array([np.cos(self.agent_orientation), 
                        np.sin(self.agent_orientation)])
         v2 = np.array((self.target_zone[0]+self.target_zone[1])/2 - self.agent_position)
@@ -144,6 +143,16 @@ class Environment2D():
         norm_v1, norm_v2 = np.linalg.norm(v1), np.linalg.norm(v2)
         theta = np.arccos(dot_product / (norm_v1 * norm_v2))
         return theta
+    
+    def angle_to_target(self):
+        v1 = np.array([np.cos(self.agent_orientation), 
+                       np.sin(self.agent_orientation)])
+        v2 = np.array((self.target_zone[0]+self.target_zone[1])/2 - self.agent_position) 
+        dot_product = np.dot(v1, v2)
+        cross_product = np.cross(v1, v2)
+        theta = np.arctan2(cross_product, dot_product)
+        return theta
+    
     
     def step(self, action):
         d_orientation = action[0]
@@ -174,12 +183,11 @@ class Environment2D():
         
         self.count += 1
         return self.get_state(), \
-              -self.dist_to_target()/self.init_dist_to_target/2 \
-              -np.absolute(d_orientation)/12, False
+              -self.dist_to_target()/self.init_dist_to_target/2 - np.absolute(d_orientation)/12, False
     
 
     def get_state(self):
-        return np.concatenate(([self.angle_to_target()],
+        return np.concatenate(([(self.angle_to_target()+np.pi)/(2*np.pi)],
                                [self.dist_to_target()/self.init_dist_to_target],
                                 self.obstacle_in_field_of_vision())
                                )

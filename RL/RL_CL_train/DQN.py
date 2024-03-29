@@ -67,13 +67,13 @@ class DQN:
             action = np.random.randint(self.action_dim)
         else:
             state = torch.tensor([state], dtype=torch.float).to(self.device)
-            action = self.q_net(state).argmax().cpu().detach().numpy()
+            action = self.q_net(state).argmax().item()
         return action
 
     def update(self, transition_dict):
         states = torch.tensor(transition_dict['states'],
                               dtype=torch.float).to(self.device)
-        actions = torch.tensor(transition_dict['actions']).view(-1, self.action_dim).to(
+        actions = torch.tensor(transition_dict['actions']).view(-1, 1).to(
             self.device)
         rewards = torch.tensor(transition_dict['rewards'],
                                dtype=torch.float).view(-1, 1).to(self.device)
@@ -97,6 +97,6 @@ class DQN:
         self.count += 1
 
     def load_model(self):
-        print('.... loading model ....')
+        print('.... loading models ....')
         self.q_net.load()
         self.target_q_net.load()

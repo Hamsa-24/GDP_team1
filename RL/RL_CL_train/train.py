@@ -2,7 +2,7 @@ import torch
 import  numpy as np
 import matplotlib.pyplot as plt
 from DQN import ReplayBuffer, DQN
-from environment import Environment3D
+from environment_test import Environment3D
 from plot_utils import moving_average
 from nav_env import NavEnvironment
 from actor_critic import ActorCritic
@@ -12,7 +12,7 @@ from geometry import set_projection
 
 lr = 2e-3
 num_episodes = 500
-n_sample_paths = 50 # Number of different paths generated to find best path for the next instruction
+n_sample_paths = 30 # Number of different paths generated to find best path for the next instruction
 n_actions_per_step = 15 # Number of next actions calculated with the nav model for next instruction derivation
 safe_altitude = 6 # Travel altitude, above target roof altitude # temporary ?
 gamma = 0.98
@@ -21,33 +21,41 @@ target_update = 3
 buffer_size = 1000
 minimal_size = 32
 batch_size = 16
-save = False
-load = False
+SAVE = False
+LOAD = False
+TEST = False
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
     "cpu")
 
 replay_buffer = ReplayBuffer(buffer_size)
 
 state_dim = 10
-action_dim = 4
+action_dim = 5
 
 env = Environment3D(state_dim, action_dim, safe_altitude, 
                     n_sample_paths, n_actions_per_step)
 nav_env = NavEnvironment(state_dim=4, action_dim=1, env=env)
 
 agent = DQN(env, lr, gamma, epsilon, target_update, device, name='DQN_1')
+if LOAD:
+    agent.load_model()
 nav_agent = ActorCritic(nav_env, 0, 0, 0, device, fc1=1024, fc2=512, 
                         name='AC2d_4')
 nav_agent.load_model()
 
+
 return_list = []
 best_return = 0
-for i_episode in range(num_episodes):
-    pygame.init()
+pygame.init()
+if TEST:
     window = pygame.display.set_mode((1200, 800), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
     clock = pygame.time.Clock()
     set_projection(*window.get_size())
+else:
+    window = pygame.display.set_mode((300, 200))
+    font = pygame.font.Font(None, 36)
 
+for i_episode in range(num_episodes):
     episode_return = 0
     state = env.reset(nav_env, nav_agent)
     _ = nav_env.reset(env=env)
@@ -68,9 +76,10 @@ for i_episode in range(num_episodes):
                 'rewards': b_r,
                 'dones': b_d }
             agent.update(transition_dict)
-    if episode_return > best_return and save:
+    if episode_return > best_return and SAVE:
         best_return = episode_return
-        agent.actor.save()
+        agent.q_net.save()
+        agent.target_q_net.save()
     return_list.append(episode_return)
     pygame.quit()
             
