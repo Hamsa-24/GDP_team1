@@ -18,8 +18,8 @@ class Environment3D():
         self.n_sample_paths = n_sample_paths
         self.n_actions_per_step = n_actions_per_step
 
-        #self.time_init = time.time()
-        #self.lifespan = max(1,int(np.random.normal(60, 6)))
+        self.time_init = time.time()
+        self.time = time.time()
         self.CL = 0.5
         self.ep_CL = 0
         self.vz = 0
@@ -38,8 +38,8 @@ class Environment3D():
         self.show_nothing = False
 
     def reset(self, nav_env, nav_agent):
-        #self.time_init = time.time()
-        #self.lifespan = max(1,int(np.random.normal(60, 6)))
+        self.time_init = time.time()
+        self.time = time.time()
         self.CL = 0.5
         self.ep_CL = 0
         self.vz = 0
@@ -86,11 +86,6 @@ class Environment3D():
         with open(path, 'w', newline='') as csvfile:
             pass
         return state
-            
-
-    def say_info(self, engine, instr):
-        engine.say(instr)
-        engine.runAndWait()
 
     def write_info(self, window, width, height, instr):
         font = pygame.font.Font(None, 36)
@@ -146,10 +141,10 @@ class Environment3D():
     def angle_to_target(self):
         v1 = np.array([np.cos(self.agent_orientation), 
                        np.sin(self.agent_orientation)])
-        v2 = np.array((self.target_zone[0,:-1]+self.target_zone[1,:-1])/2 - self.agent_position[:-1])
+        v2 = np.array(self.target_zone[:,:-1].mean(axis=0) - self.agent_position[:-1])
         dot_product = np.dot(v1, v2)
-        norm_v1, norm_v2 = np.linalg.norm(v1), np.linalg.norm(v2)
-        theta = np.arccos(dot_product / (norm_v1 * norm_v2))
+        cross_product = np.cross(v1, v2)
+        theta = np.arctan2(cross_product, dot_product)
         return theta
     
     def check_target_reached(self):
@@ -181,29 +176,30 @@ class Environment3D():
         self.show_nothing = show_nothing_
 
         engine = pyttsx3.init()
-        time_init = time.time()
-        orient = self.agent_orientation
-        while time.time() < time_init + self.time_per_step:
-            state = self.get_info()  # 0 = flying, 1 = landed, 2 = crashed, 3 = exploded
+        if not self.show_nothing:
+            if self.show_instr_d_theta:
+                engine.say(engine, f"Reach orientation {(self.agent_orientation+self.instr_d_theta)*180/np.pi:.0f}°")
+            if self.show_instr_vz:
+                if self.instr_vz >= 0:
+                    engine.say(engine, f"Reach altitude {self.safe_altitude:.1f}")
+                else:
+                    engine.say(engine, f"Go down and land on roof")
+            if self.show_angle_to_xf:
+                engine.say(engine, f"Angle to target: {self.angle_to_target()*180/np.pi:.0f}°")
+            if self.show_dist_to_xf:
+                engine.say(engine, f"Distance to target: {self.dist_to_target():.1f}")
 
+        engine.startLoop(False)
+        time_init = time.time()
+        while time.time() < time_init + self.time_per_step:
+            engine.iterate()
+            state = self.get_info()  # 0 = flying, 1 = landed, 2 = crashed, 3 = exploded
             for event in pygame.event.get():
                 pass
             window.fill((0, 0, 0))
-            self.write_info(window, 50,70,f"Orientation: {self.agent_orientation*180/np.pi:.0f}°")
-            self.write_info(window, 50,150,f"Altitude: {self.agent_position[-1]:.2f}°")
+            self.write_info(window, 50, 70, f"Orientation: {self.agent_orientation*180/np.pi:.0f}°")
+            self.write_info(window, 50, 150, f"Altitude: {self.agent_position[-1]:.2f}°")
             pygame.display.flip()
-            if not self.show_nothing:
-                if self.show_instr_d_theta:
-                    self.say_info(engine, f"Reach orientation {(orient+self.instr_d_theta)*180/np.pi:.0f}°")
-                if self.show_instr_vz:
-                    if self.instr_vz >= 0:
-                        self.say_info(engine, f"Reach altitude {self.safe_altitude:.1f}")
-                    else:
-                        self.say_info(engine, f"Go down and land on roof")
-                if self.show_angle_to_xf:
-                    self.say_info(engine, f"Angle to target: {self.angle_to_target()*180/np.pi:.0f}°")
-                if self.show_dist_to_xf:
-                    self.say_info(engine, f"Distance to target: {self.dist_to_target():.1f}")
 
             if state == 2:
                 return self.get_state(), -100, True  
@@ -211,7 +207,8 @@ class Environment3D():
                 return self.get_state(), 200, True  
             if state == 3:
                 return self.get_state(), -self.ep_CL, True
-            
+        
+        engine.endLoop()
         self.ep_CL += self.CL
         self.get_instructions(nav_env, nav_agent)
 

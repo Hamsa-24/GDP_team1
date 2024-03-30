@@ -18,8 +18,8 @@ class Environment3D():
         self.n_sample_paths = n_sample_paths
         self.n_actions_per_step = n_actions_per_step
 
-        self.time_since_failure = 0
-        self.death_count = max(1,int(np.random.normal(2400, 240)))
+        self.time_init = time.time()
+        self.death_time = np.random.uniform(60, 8)
         self.agent_orientation = np.random.uniform(-np.pi, np.pi)
         self.ep_CL = 0
         self.vz = 0
@@ -53,6 +53,8 @@ class Environment3D():
         self.vz = 0
         self.agent_size = 0.1
 
+        self.time_init = time.time()
+        self.death_time = np.random.uniform(60, 8)
         self.n_obstacles = np.random.randint(5,25)
         self.agent_position, self.target_zone, self.forbidden_zone = self.initialize_random(self.n_obstacles)
         self.init_dist_to_target = self.dist_to_target()
@@ -156,22 +158,19 @@ class Environment3D():
                 np.all(drone_upper_corner <= self.target_zone[1]))
     
     def is_crashed(self):
-        return (self.count == self.death_count) or (self.agent_position[-1] <= 0)
+        return (time.time() >= self.time_init + self.death_time) or (self.agent_position[-1] <= 0)
     
     def angle_to_target(self):
         v1 = np.array([np.cos(self.agent_orientation), 
                        np.sin(self.agent_orientation)])
-        v2 = np.array((self.target_zone[0,:-1]+self.target_zone[1,:-1])/2 - self.agent_position[:-1])
+        v2 = np.array(self.target_zone[:,:-1].mean(axis=0) - self.agent_position[:-1])
         dot_product = np.dot(v1, v2)
-        norm_v1, norm_v2 = np.linalg.norm(v1), np.linalg.norm(v2)
-        theta = np.arccos(dot_product / (norm_v1 * norm_v2))
+        cross_product = np.cross(v1, v2)
+        theta = np.arctan2(cross_product, dot_product)
         return theta
     
     def get_CL(self):
         return 0.5
-    
-    def time_update(self):
-        pass
 
     def get_instructions(self, nav_env, nav_agent):
         agent_pos = self.agent_position[:-1]
@@ -241,12 +240,12 @@ class Environment3D():
 
 
     def get_state(self):
-        return np.concatenate(([self.instr_d_theta],
+        return np.concatenate(([self.instr_d_theta/np.pi],
                                [self.instr_vz],
-                               [self.angle_to_target()],
+                               [self.angle_to_target()/np.pi],
                                [self.dist_to_target()/self.init_dist_to_target],
                                [self.get_CL()],
-                               [self.time_since_failure],
+                               [self.time_since_failure/60],
                                 self.obstacle_in_field_of_vision(),
                                [self.show_instr_d_theta],
                                [self.show_instr_vz]))
@@ -321,7 +320,7 @@ class Environment3D():
             draw_line(point, self.agent_orientation)
             drawText(40, 20, f"Orientation: {self.agent_orientation*180/np.pi:.0f}°")
             drawText(40, 70, f"Altitude: {self.agent_position[-1]:.2f}°")
-
+            
             if not self.show_nothing:
                 if self.show_instr_d_theta:
                     drawText(window.get_width()-400, 50, f"Reach orientation {(orient+self.instr_d_theta)*180/np.pi:.0f}°")
@@ -346,7 +345,6 @@ class Environment3D():
             if self.is_crashed():
                 return self.get_state(), -self.ep_CL, True
         
-        self.count += 1
         self.ep_CL += self.get_CL()
         path = self.get_instructions(nav_env, nav_agent)
 ######
@@ -358,5 +356,4 @@ class Environment3D():
             point = Point(position_)
             self.points.append(point)
 #######
-        self.time_since_failure += time.time() - start_time
         return self.get_state(), -self.get_CL(), False

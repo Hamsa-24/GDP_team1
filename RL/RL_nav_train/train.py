@@ -18,7 +18,7 @@ action_dim = 1
 
 env = Environment2D(state_dim, action_dim)
 agent = ActorCritic(env, actor_lr, critic_lr, gamma, device, 
-             name='AC2d_5b', fc1=1024, fc2=512)
+             name='AC2d_5c', fc1=1024, fc2=512)
 
 PLOT2d = True
 PLOT3d = False

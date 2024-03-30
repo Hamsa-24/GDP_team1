@@ -14,7 +14,7 @@ lr = 2e-3
 num_episodes = 500
 n_sample_paths = 30 # Number of different paths generated to find best path for the next instruction
 n_actions_per_step = 15 # Number of next actions calculated with the nav model for next instruction derivation
-safe_altitude = 6 # Travel altitude, above target roof altitude # temporary ?
+safe_altitude = 5 # Travel altitude, above target roof altitude # temporary ?
 gamma = 0.98
 epsilon = 0.01
 target_update = 3
@@ -23,7 +23,7 @@ minimal_size = 32
 batch_size = 16
 SAVE = False
 LOAD = False
-TEST = False
+TEST = True
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
     "cpu")
 
@@ -40,22 +40,22 @@ agent = DQN(env, lr, gamma, epsilon, target_update, device, name='DQN_1')
 if LOAD:
     agent.load_model()
 nav_agent = ActorCritic(nav_env, 0, 0, 0, device, fc1=1024, fc2=512, 
-                        name='AC2d_4')
+                        name='AC2d_5b')
 nav_agent.load_model()
 
 
 return_list = []
 best_return = 0
-pygame.init()
-if TEST:
-    window = pygame.display.set_mode((1200, 800), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
-    clock = pygame.time.Clock()
-    set_projection(*window.get_size())
-else:
-    window = pygame.display.set_mode((300, 200))
-    font = pygame.font.Font(None, 36)
-
 for i_episode in range(num_episodes):
+    pygame.init()
+    if TEST:
+        window = pygame.display.set_mode((1200, 800), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
+        clock = pygame.time.Clock()
+        set_projection(*window.get_size())
+    else:
+        window = pygame.display.set_mode((300, 200))
+        font = pygame.font.Font(None, 36)
+
     episode_return = 0
     state = env.reset(nav_env, nav_agent)
     _ = nav_env.reset(env=env)

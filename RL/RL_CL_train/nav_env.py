@@ -6,8 +6,6 @@ class NavEnvironment():
         self.agent_size = np.copy(env.agent_size)
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.count = np.copy(env.count)
-        self.death_count = np.copy(env.death_count)
         self.agent_orientation = np.copy(env.agent_orientation)
         self.agent_position = np.copy(env.agent_position)
         self.target_zone = np.copy(env.target_zone)
@@ -15,9 +13,7 @@ class NavEnvironment():
         self.init_dist_to_target = self.dist_to_target()
 
     def reset(self, env):
-        self.count = np.copy(env.count)
         self.agent_orientation = np.copy(env.agent_orientation)
-        self.death_count = np.copy(env.death_count)
         self.agent_position = np.copy(env.agent_position)
         self.target_zone = np.copy(env.target_zone)
         self.forbidden_zone = np.copy(env.forbidden_zone)
@@ -123,21 +119,18 @@ class NavEnvironment():
         return (np.all(drone_lower_corner >= self.target_zone[0]) and 
                 np.all(drone_upper_corner <= self.target_zone[1]))
     
-    def is_crashed(self):
-        return self.count == self.death_count
     
     def angle_to_target(self):
         v1 = np.array([np.cos(self.agent_orientation), 
                        np.sin(self.agent_orientation)])
         v2 = np.array(self.target_zone[:,:-1].mean(axis=0) - self.agent_position[:-1])
         dot_product = np.dot(v1, v2)
-        norm_v1, norm_v2 = np.linalg.norm(v1), np.linalg.norm(v2)
-        theta = np.arccos(dot_product / (norm_v1 * norm_v2))
+        cross_product = np.cross(v1, v2)
+        theta = np.arctan2(cross_product, dot_product)
         return theta
 
-
     def get_state(self):
-        return np.concatenate(([self.angle_to_target()/np.pi],
+        return np.concatenate(([(self.angle_to_target()+np.pi)/(2*np.pi)],
                                [self.dist_to_target()/self.init_dist_to_target],
                                 self.obstacle_in_field_of_vision()))
     
@@ -164,10 +157,6 @@ class NavEnvironment():
         if self.check_target_reached():
             return self.get_state(), 150, True  
         
-        if self.is_crashed():
-            return self.get_state(), -3*self.dist_to_target(), True
-        
-        self.count += 1
         return self.get_state(), \
               -self.dist_to_target()/self.init_dist_to_target/2 \
               -np.absolute(d_orientation)/12, False

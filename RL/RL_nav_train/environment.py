@@ -165,7 +165,7 @@ class Environment2D():
 
         self.agent_orientation = orientation_
         
-        self.agent_position += 1/4 * np.array([np.cos(self.agent_orientation), 
+        self.agent_position += 1/6 * np.array([np.cos(self.agent_orientation), 
                                                np.sin(self.agent_orientation)])
         
         agent = np.vstack((self.agent_position-self.agent_size/2, 
@@ -180,14 +180,13 @@ class Environment2D():
         if self.is_crashed():
             return self.get_state(), -self.dist_to_target()*3, True
         
-        
         self.count += 1
         return self.get_state(), \
               -self.dist_to_target()/self.init_dist_to_target/2 - np.absolute(d_orientation)/12, False
     
 
     def get_state(self):
-        return np.concatenate(([(self.angle_to_target()+np.pi)/(2*np.pi)],
+        return np.concatenate(([(self.angle_to_target())/(np.pi)],
                                [self.dist_to_target()/self.init_dist_to_target],
                                 self.obstacle_in_field_of_vision())
                                )
