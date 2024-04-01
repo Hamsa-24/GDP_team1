@@ -14,10 +14,10 @@ action_dim = 1
 
 env = Environment2D(state_dim, action_dim)
 agent = ActorCritic(env, 0, 0, 0, device, fc1=1024, fc2=512, 
-                    name='AC2d_5b')
+                    name='AC2d_5c')
 agent.load_model()
 
-PLOT2d = False
+PLOT2d = True
 PLOT3d = False
 PLOT_episodes = range(num_episodes)
 

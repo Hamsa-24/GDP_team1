@@ -130,7 +130,7 @@ class NavEnvironment():
         return theta
 
     def get_state(self):
-        return np.concatenate(([(self.angle_to_target()+np.pi)/(2*np.pi)],
+        return np.concatenate(([self.angle_to_target()/(np.pi)],
                                [self.dist_to_target()/self.init_dist_to_target],
                                 self.info_obstacle))
     

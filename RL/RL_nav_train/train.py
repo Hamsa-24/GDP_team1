@@ -8,7 +8,7 @@ from DDPG import DDPG
 
 
 actor_lr = 1e-5 #5
-critic_lr = 1e-6#6
+critic_lr = 1e-6 #6
 num_episodes = 2000000
 gamma = 0.98
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device( "cpu")
@@ -23,7 +23,7 @@ agent = ActorCritic(env, actor_lr, critic_lr, gamma, device,
 PLOT2d = True
 PLOT3d = False
 PLOT_episodes = [1000, 5000, 20000, 50000, 99996, 99997, 99998, 99999]
-return_list = train_on_policy_agentAC(env, agent, num_episodes, save=True,
+return_list = train_on_policy_agentAC(env, agent, num_episodes, save=False,
                                         PLOT2d=PLOT2d,
                                         PLOT3d=PLOT3d,
                                         PLOT_episodes=PLOT_episodes)
