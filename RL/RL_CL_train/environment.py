@@ -3,7 +3,6 @@ import time
 import csv
 import os
 import pyttsx3
-from geometry import drawText
 import pygame
 
 class Environment3D():
@@ -24,9 +23,9 @@ class Environment3D():
         self.ep_CL = 0
         self.vz = 0
         self.info_obstacle = (0, 0)  # Collision risk, obstacle ahead (boolean)
-        self.agent_position = self.get_pos()
-        self.agent_orientation = self.get_orientation()
-        self.target_zone = self.get_target()
+        self.agent_position = np.array([0,0,0])
+        self.agent_orientation = 0
+        self.target_zone = np.array([[0,0,0],[0,0,0]])
         self.init_dist_to_target = self.dist_to_target()
 
         self.instr_d_theta = 0
@@ -44,9 +43,9 @@ class Environment3D():
         self.ep_CL = 0
         self.vz = 0
         self.info_obstacle = (0, 0)
-        self.agent_position = self.get_pos()
-        self.agent_orientation = self.get_orientation()
-        self.target_zone = self.get_target()
+        self.agent_position = np.array([0,0,0])
+        self.agent_orientation = 0
+        self.target_zone = np.array([[0,0,0],[0,0,0]])
         self.init_dist_to_target = self.dist_to_target()
 
         self.show_instr_vz = False
@@ -59,33 +58,34 @@ class Environment3D():
         return self.get_state()
     
 
-    def get_info(self, path='csv.csv', scope=3, min_heartrate=60,  max_heartrate=120): ################################################### CHANGER PATH
+    def get_info(self, path='/home/blechardoy/Cranfield/GDP/ros2_work/simple_drone_positions.csv', scope=3, min_heartrate=60,  max_heartrate=120): ################################################### CHANGER PATH
         while os.path.getsize(path) == 0:
             time.sleep(1)
 
         with open(path, 'r', newline='') as csvfile:
-            while not last_line:
-                csv_reader = csv.reader(csvfile)
-                last_line = None
-                for line in csv_reader:
-                    last_line = line
-            time_init, time, target_min, target_max, x, y, z, orientation, dist_obstacle, heartrate, state = tuple(last_line)
-            self.time_init = time_init
-            self.time = time
+            csv_reader = csv.reader(csvfile)
+            last_line = None
+            for line in csv_reader:
+                last_line = line
+            time_init, time_, target_min, target_max, x, y, z, orientation, dist_obstacle, heartrate, state = tuple(last_line)
+            self.time_init = float(time_init)
+            self.time = float(time_)
+            target_min = [int(f) for f in target_min[1:-1].split()]
+            target_max = [int(f) for f in target_max[1:-1].split()]
             self.target_zone = np.vstack((target_min, target_max))/10
-            self.agent_position = np.array([x, y, z])/10
-            self.agent_orientation = orientation
+            self.agent_position = np.array([float(x), float(y), float(z)])/10
+            self.agent_orientation = float(orientation)
             collision_risk, obstacle_ahead = 0, 0
-            dist_obstacle = dist_obstacle/10
+            dist_obstacle = float(dist_obstacle)/10
             if dist_obstacle < scope:
                 collision_risk, obstacle_ahead = (scope-dist_obstacle)/scope, 1
             self.collision_risk = collision_risk
             self.obstacle_ahead = obstacle_ahead
-            self.CL = (heartrate-min_heartrate)/(max_heartrate-min_heartrate)
+            self.CL = (float(heartrate)-float(min_heartrate))/(float(max_heartrate)-float(min_heartrate))
         
-        with open(path, 'w', newline='') as csvfile:
-            pass
-        return state
+        # with open(path, 'w', newline='') as csvfile:
+        #     pass
+        return int(state)
 
     def write_info(self, window, width, height, instr):
         font = pygame.font.Font(None, 36)

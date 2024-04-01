@@ -9,14 +9,14 @@ class NavEnvironment():
         self.agent_orientation = np.copy(env.agent_orientation)
         self.agent_position = np.copy(env.agent_position)
         self.target_zone = np.copy(env.target_zone)
-        self.forbidden_zone = np.copy(env.forbidden_zone)
+        self.info_obstacle = np.copy(env.info_obstacle)
         self.init_dist_to_target = self.dist_to_target()
 
     def reset(self, env):
         self.agent_orientation = np.copy(env.agent_orientation)
         self.agent_position = np.copy(env.agent_position)
         self.target_zone = np.copy(env.target_zone)
-        self.forbidden_zone = np.copy(env.forbidden_zone)
+        self.info_obstacle = np.copy(env.info_obstacle)
         self.init_dist_to_target = self.dist_to_target()
         return self.get_state()
     
@@ -132,7 +132,7 @@ class NavEnvironment():
     def get_state(self):
         return np.concatenate(([(self.angle_to_target()+np.pi)/(2*np.pi)],
                                [self.dist_to_target()/self.init_dist_to_target],
-                                self.obstacle_in_field_of_vision()))
+                                self.info_obstacle))
     
 
     def step(self, action):
@@ -148,11 +148,6 @@ class NavEnvironment():
                                np.sin(self.agent_orientation)])
 
         self.agent_position += np.concatenate((d_xy, [0]))
-        agent = np.vstack((self.agent_position - self.agent_size/2, 
-                           self.agent_position + self.agent_size/2))
-
-        if self.object_in_conflict(agent, self.forbidden_zone, obj_is_agent=True):
-            return self.get_state(), -100, True  
         
         if self.check_target_reached():
             return self.get_state(), 150, True  

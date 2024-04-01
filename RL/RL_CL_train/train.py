@@ -2,12 +2,12 @@ import torch
 import  numpy as np
 import matplotlib.pyplot as plt
 from DQN import ReplayBuffer, DQN
-from environment_test import Environment3D
+from environment import Environment3D
 from plot_utils import moving_average
 from nav_env import NavEnvironment
 from actor_critic import ActorCritic
 import pygame
-from geometry import set_projection
+# from geometry import set_projection
 
 
 lr = 2e-3
@@ -23,7 +23,7 @@ minimal_size = 32
 batch_size = 16
 SAVE = False
 LOAD = False
-TEST = True
+TEST = False
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
     "cpu")
 
@@ -51,7 +51,7 @@ for i_episode in range(num_episodes):
     if TEST:
         window = pygame.display.set_mode((1200, 800), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
         clock = pygame.time.Clock()
-        set_projection(*window.get_size())
+        # set_projection(*window.get_size())
     else:
         window = pygame.display.set_mode((300, 200))
         font = pygame.font.Font(None, 36)
