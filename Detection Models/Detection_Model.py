@@ -13,7 +13,7 @@ def obstacle_detection():
     datafile = '/content/my-dataset/data.yaml'
     return datafile
 
-def roof_detecton():
+def roof_detection():
     rf = Roboflow(api_key='l05N5YrhNgMFM59AKEVh', model_format='yolov8')
     dataset = rf.workspace('ankit-badxt').project('roof-detection-kmib1').version(1).download(location='/content/my-dataset')
     datafile = '/content/my-dataset/data.yaml'
@@ -23,7 +23,7 @@ def roof_detecton():
 task = input('Do you want to detect roof or obstacle?')
 
 if task == 'roof':
-    TrainModel.model_train(model, roof_detecton())
+    TrainModel.model_train(model, roof_detection())
     test_image = 'https://c7.alamy.com/comp/W3TMEC/aerial-photo-of-a-bungalow-settlement-in-essen-with-small-gardens-and-flat-roofs-in-essen-ruhr-area-north-rhine-westphalia-germany-essen-de-euro-W3TMEC.jpg'
     TrainModel.predict_image(model, test_image)
 elif task == 'obstacle':
