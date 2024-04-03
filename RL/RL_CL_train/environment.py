@@ -80,8 +80,7 @@ class Environment3D():
             dist_obstacle = float(dist_obstacle)/10
             if dist_obstacle < scope:
                 collision_risk, obstacle_ahead = (scope-dist_obstacle)/scope, 1
-            self.collision_risk = collision_risk
-            self.obstacle_ahead = obstacle_ahead
+            self.info_obstacle = collision_risk, obstacle_ahead
             self.CL = (float(heartrate)-float(min_heartrate))/(float(max_heartrate)-float(min_heartrate))
 
         return int(state)
