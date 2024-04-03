@@ -25,6 +25,7 @@ class Environment3D():
         self.vz = 0
 
         self.n_obstacles = np.random.randint(5,25)
+        self.info_obstacle = (0, 0)
         self.agent_size = 0.1
         self.agent_position, self.target_zone, self.forbidden_zone = self.initialize_random(self.n_obstacles)
         self.init_dist_to_target = self.dist_to_target()
@@ -56,6 +57,7 @@ class Environment3D():
         self.time_init = time.time()
         self.death_time = np.random.uniform(60, 8)
         self.n_obstacles = np.random.randint(5,25)
+        self.info_obstacle = (0, 0)
         self.agent_position, self.target_zone, self.forbidden_zone = self.initialize_random(self.n_obstacles)
         self.init_dist_to_target = self.dist_to_target()
 
@@ -235,7 +237,7 @@ class Environment3D():
                     collision_risk = (scope-distance_agent_obstacle)/scope
                     collision_risks.append(collision_risk)
                     obstacle_ahead = 1
-    
+        self.info_obstacle = np.max(collision_risks), obstacle_ahead
         return np.max(collision_risks), obstacle_ahead
 
 
@@ -278,7 +280,7 @@ class Environment3D():
                 if event.type == pygame.QUIT:
                     run = False
                 elif event.type == pygame.VIDEORESIZE:
-                    #glViewport(0, 0, event.w, event.h)
+                    glViewport(0, 0, event.w, event.h)
                     set_projection(event.w, event.h)
                     #set_projection(self.agent_position, self.agent_orientation)
             d_theta = 0
