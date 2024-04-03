@@ -67,7 +67,7 @@ class Environment3D():
             csv_reader = csv.reader(csvfile)
             last_line = None
             for line in csv_reader:
-                if int(line[-1]) in (1, 2, 3):
+                if int(line[-1]) != 0:
                     last_line = line
                     self.flush_csv(path=path)
                 last_line = line
