@@ -58,7 +58,7 @@ class Environment3D():
         return self.get_state()
     
 
-    def get_info(self, path='/home/blechardoy/Cranfield/GDP/ros2_work/simple_drone_positions.csv', scope=3, 
+    def get_info(self, path=r"\\wsl.localhost\Ubuntu-22.04\home\blechardoy\Cranfield\GDP\ros2_work\simple_drone_positions.csv", scope=3, 
                  min_heartrate=60,  max_heartrate=120): ################################################### CHANGER PATH
         while os.path.getsize(path) == 0:
             time.sleep(1)
@@ -86,7 +86,7 @@ class Environment3D():
 
         return int(state)
     
-    def flush_csv(self, path='/home/blechardoy/Cranfield/GDP/ros2_work/simple_drone_positions.csv'):
+    def flush_csv(self, path=r"\\wsl.localhost\Ubuntu-22.04\home\blechardoy\Cranfield\GDP\ros2_work\simple_drone_positions.csv"):
         with open(path, 'w', newline='') as csvfile:
             pass
 
