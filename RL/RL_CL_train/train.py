@@ -40,7 +40,7 @@ agent = DQN(env, lr, gamma, epsilon, target_update, device, name='DQN_1')
 if LOAD:
     agent.load_model()
 nav_agent = ActorCritic(nav_env, 0, 0, 0, device, fc1=1024, fc2=512, 
-                        name='AC2d_5b')
+                        name='AC2d_5c')
 nav_agent.load_model()
 
 

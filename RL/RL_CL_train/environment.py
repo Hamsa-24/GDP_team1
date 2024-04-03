@@ -58,7 +58,8 @@ class Environment3D():
         return self.get_state()
     
 
-    def get_info(self, path='/home/blechardoy/Cranfield/GDP/ros2_work/simple_drone_positions.csv', scope=3, min_heartrate=60,  max_heartrate=120): ################################################### CHANGER PATH
+    def get_info(self, path='/home/blechardoy/Cranfield/GDP/ros2_work/simple_drone_positions.csv', scope=3, 
+                 min_heartrate=60,  max_heartrate=120): ################################################### CHANGER PATH
         while os.path.getsize(path) == 0:
             time.sleep(1)
 
@@ -82,10 +83,12 @@ class Environment3D():
             self.collision_risk = collision_risk
             self.obstacle_ahead = obstacle_ahead
             self.CL = (float(heartrate)-float(min_heartrate))/(float(max_heartrate)-float(min_heartrate))
-        
-        # with open(path, 'w', newline='') as csvfile:
-        #     pass
+
         return int(state)
+    
+    def flush_csv(self, path='/home/blechardoy/Cranfield/GDP/ros2_work/simple_drone_positions.csv'):
+        with open(path, 'w', newline='') as csvfile:
+            pass
 
     def write_info(self, window, width, height, instr):
         font = pygame.font.Font(None, 36)
@@ -178,16 +181,16 @@ class Environment3D():
         engine = pyttsx3.init()
         if not self.show_nothing:
             if self.show_instr_d_theta:
-                engine.say(engine, f"Reach orientation {(self.agent_orientation+self.instr_d_theta)*180/np.pi:.0f}°")
+                engine.say(f"Reach orientation {(self.agent_orientation+self.instr_d_theta)*180/np.pi:.0f}°")
             if self.show_instr_vz:
                 if self.instr_vz >= 0:
-                    engine.say(engine, f"Reach altitude {self.safe_altitude:.1f}")
+                    engine.say(f"Reach altitude {self.safe_altitude:.1f}")
                 else:
-                    engine.say(engine, f"Go down and land on roof")
+                    engine.say(f"Go down and land on roof")
             if self.show_angle_to_xf:
-                engine.say(engine, f"Angle to target: {self.angle_to_target()*180/np.pi:.0f}°")
+                engine.say(f"Angle to target: {self.angle_to_target()*180/np.pi:.0f}°")
             if self.show_dist_to_xf:
-                engine.say(engine, f"Distance to target: {self.dist_to_target():.1f}")
+                engine.say(f"Distance to target: {self.dist_to_target():.1f}")
 
         engine.startLoop(False)
         time_init = time.time()
@@ -202,10 +205,13 @@ class Environment3D():
             pygame.display.flip()
 
             if state == 2:
+                self.flush_csv()
                 return self.get_state(), -100, True  
             if state == 1:
+                self.flush_csv()
                 return self.get_state(), 200, True  
             if state == 3:
+                self.flush_csv()
                 return self.get_state(), -self.ep_CL, True
         
         engine.endLoop()
