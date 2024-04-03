@@ -67,6 +67,9 @@ class Environment3D():
             csv_reader = csv.reader(csvfile)
             last_line = None
             for line in csv_reader:
+                if int(line[-1]) in (1, 2, 3):
+                    last_line = line
+                    self.flush_csv(path=path)
                 last_line = line
             time_init, time_, target_min, target_max, x, y, z, orientation, dist_obstacle, heartrate, state = tuple(last_line)
             self.time_init = float(time_init)
