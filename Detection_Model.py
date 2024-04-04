@@ -26,10 +26,10 @@ class Roof_Detection():
         predicted_class = int(predictions[0].boxes.cls[0])
         if predicted_class == 0:
             print("Flat Roof detected. Please find below the bounding box (co-ordinates) of the region")
-            a = int(predictions[0].boxes.xyxy[0][0])    # get box coordinates in (left, top, right, bottom) format
-            b = int(predictions[0].boxes.xyxy[0][1])
-            c = int(predictions[0].boxes.xyxy[0][2])
-            d = int(predictions[0].boxes.xyxy[0][3])
+            a = int(predictions[0].boxes.xyxy[0][0]) #LEFT    # get box coordinates in (left, top, right, bottom) format
+            b = int(predictions[0].boxes.xyxy[0][1]) #TOP
+            c = int(predictions[0].boxes.xyxy[0][2]) #RIGHT
+            d = int(predictions[0].boxes.xyxy[0][3]) #BOTTOM
             return a,b,c,d
         else:
             return "No Flat Roof detected"
